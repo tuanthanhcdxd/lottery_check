@@ -15,27 +15,19 @@ import re
 import datetime
 
 
-def lottery_results():
-    result = None
-
-    url = "https://ketqua.vn"
-    r = requests.get(url)
-    tree = bs4.BeautifulSoup(markup=r.text, features="html.parser")
-    prizes = tree.find_all("td", class_=re.compile("prize"))
-
-    result = [prize.text.strip() for prize in prizes]
-
-    return result
+url = "https://ketqua.vn/"
+r = requests.get(url)
+tree = bs4.BeautifulSoup(markup=r.text, features="html.parser")
+prizes = tree.find_all("td", class_=re.compile("prize"))
+result_raw = [prize.text.strip() for prize in prizes]
+list_two_last_digits = [prize[-2:] for prize in result_raw]
 
 
 def check_numbers(numbers):
     result = None
-
-    set_two_last_digits = set([prize[-2:] for prize in lottery_results()])
-
     set_numbers = set()
     for number in list(numbers):
-        if number in set_two_last_digits:
+        if number in list_two_last_digits:
             set_numbers.add(number)
 
     result = set_numbers
@@ -49,15 +41,19 @@ def solve(input_data):
         result = check_numbers(input_data)
         for number in input_data:
             if number in result:
-                print("Số {} trúng {} nháy.".format(number, input_data.count(number)))
+                print("Số {} trúng {} nháy.".format(number, list_two_last_digits.count(number)))
             else:
                 print("Số {} không trúng giải.".format(number))
     elif len(input_data) == 0:
-        result = [int(prize) for prize in lottery_results()]
-        today = datetime.date.today().strftime("%d/%m/%Y")
-        print(
-            "Kết quả xổ số ngày {}, giải ĐB đến G7: {}".format(today, result)
-        )
+        result = [int(prize) for prize in result_raw]
+        # result_day = datetime.date.result_day().strftime("%d/%m/%Y")
+        result_day = tree.find('div', {'class': 'color-content text-center fw-normal'}).text
+        print("Kết quả xổ số Miền Bắc {}, giải ĐB đến G7: {}".format(result_day, result))
+        print()
+        for num in set(list_two_last_digits):
+            if list_two_last_digits.count(num) > 1:
+                print('Lô về nhiều nhất: {} với {} nháy'.format(num, list_two_last_digits.count(num)))
+
 
     return result
 
@@ -68,9 +64,10 @@ def main():
     if num_cal:
         for i in range(int(num_cal)):
             numbers.append(input('Nhập lô vào: '))
-    else:
-        print('Nếu không đánh lô thì xem thôi!')
-        time.sleep(1)
+    elif num_cal == '' or num_cal == None:
+        print('Không đánh thì xem kết quả cũng được mà nhỉ!')
+        print()
+        time.sleep(2)
 
     for arg in sys.argv[1:]:
         print(sys.argv[0])
